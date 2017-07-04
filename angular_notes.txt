@@ -1,3 +1,15 @@
+/***********************************************************
+ *
+ *          			Initial Setup
+ *
+ **********************************************************/
+
+
+// Official Documentation
+
+	https://github.com/angular/angular-cli
+
+
 Step 1. Set up the Development Environment
 
 	npm install -g @angular/cli
@@ -12,5 +24,750 @@ Step 3: Serve the application
 
 	cd my-app
 	ng serve --open
+
+
+
+
+/***********************************************************
+ *
+ *          Create Hero Class and use ngModel
+ *
+ **********************************************************/
+
+// Export new hero class - hero.ts
+
+export class Hero {
+  id: number;
+  name: string;
+}
+
+
+// Then export in app.component.ts
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'Tour of Heroes';
+  hero : Hero = {
+    id: 1,
+    name: 'Windstorm'
+  };
+};
+
+
+// Import FormsModule in app.module.ts to use [(ngModel)]
+
+// NgModel lives here
+import { FormsModule }   from '@angular/forms';
+
+// import the FormsModule before binding with [(ngModel)]
+@NgModule({
+  imports: [
+    BrowserModule,
+    FormsModule // <-- import the FormsModule before binding with [(ngModel)]
+  ],
+  declarations: [
+    AppComponent
+  ],
+  bootstrap: [ AppComponent ]
+})
+
+
+
+
+/***********************************************************
+ *
+ *             Show and Style List of Heroes
+ *
+ **********************************************************/
+
+
+// Create an array of ten heroes.
+
+src/app/app.component.ts (hero array)
+
+const HEROES: Hero[] = [
+  { id: 11, name: 'Mr. Nice' },
+  { id: 12, name: 'Narco' },
+  { id: 13, name: 'Bombasto' },
+  { id: 14, name: 'Celeritas' },
+  { id: 15, name: 'Magneta' },
+  { id: 16, name: 'RubberMan' },
+  { id: 17, name: 'Dynama' },
+  { id: 18, name: 'Dr IQ' },
+  { id: 19, name: 'Magma' },
+  { id: 20, name: 'Tornado' }
+];
+
+
+// Expose HEROES
+
+heroes = HEROES;
+
+
+// Display hero names in a template
+
+<h2>My Heroes</h2>
+<ul class="heroes">
+  <li *ngFor="let hero of heroes">
+  	<span class="badge">{{hero.id}}</span> {{hero.name}}
+  </li>
+</ul>
+
+
+// Style the heroes
+
+.selected {
+    background-color: #CFD8DC !important;
+    color: white;
+}
+.heroes {
+	margin: 0 0 2em 0;
+	list-style-type: none;
+	padding: 0;
+	width: 15em;
+}
+.heroes li {
+	cursor: pointer;
+	position: relative;
+	left: 0;
+	background-color: #EEE;
+	margin: .5em;
+	padding: .3em 0;
+	height: 1.6em;
+	border-radius: 4px;
+}
+.heroes li.selected:hover {
+	background-color: #BBD8DC !important;
+	color: white;
+}
+.heroes li:hover {
+	color: #607D8B;
+	background-color: #DDD;
+	left: .1em;
+}
+.heroes .text {
+	position: relative;
+	top: -3px;
+}
+.heroes .badge {
+	display: inline-block;
+	font-size: small;
+	color: white;
+	padding: 0.8em 0.7em 0 0.7em;
+	background-color: #607D8B;
+	line-height: 1em;
+	position: relative;
+	left: -1px;
+	top: -4px;
+	height: 1.8em;
+	margin-right: .8em;
+	border-radius: 4px 0 0 4px;
+}
+
+
+
+
+/***********************************************************
+ *
+ *           		Selecting a Hero
+ *
+ **********************************************************/
+
+
+// Handle click events
+
+<li *ngFor="let hero of heroes" (click)="onSelect(hero)">
+  ...
+</li>
+
+
+// Add a click handler to expose the selected hero
+// Add an onSelect() method that sets the selectedHero property to the hero that the user clicks.
+
+export class AppComponent {
+    title = 'Tour of Heroes';
+    selectedHero: Hero;
+    heroes = HEROES;
+
+    // functions for this AppComponent
+    onSelect(hero: Hero): void {
+        this.selectedHero = hero;
+    }
+};
+
+
+// Bind to the new selectedHero property in app.component.html
+
+<h2>{{selectedHero.name}} details!</h2>
+<div><label>id: </label>{{selectedHero.id}}</div>
+<div>
+    <label>name: </label>
+    <input [(ngModel)]="selectedHero.name" placeholder="name"/>
+</div>
+
+
+// Hide the empty detail with ngIf
+
+<div *ngIf="selectedHero">
+	...
+</div>
+
+
+// Style the selected hero from app.component.html
+// When the expression (hero === selectedHero) is true, Angular adds the selected CSS class.
+
+[class.selected]="hero === selectedHero"
+
+
+
+
+/***********************************************************
+ *
+ *           		New Components
+ *
+ **********************************************************/
+
+
+// Make a hero detail component
+
+	ng generate component hero-detail
+
+
+// create hero template in hero-detail-component.html
+
+<div *ngIf="hero">
+	<h2>{{hero.name}} details!</h2>
+	<div><label>id: </label>{{hero.id}}</div>
+	<div>
+		<label>name: </label>
+		<input [(ngModel)]="hero.name" placeholder="name"/>
+	</div>
+</div>
+
+
+// import and use { Hero } class in hero-detail.component.ts
+
+import { Hero } from '../hero';
+hero: Hero;
+
+
+// The hero property is an input property
+
+	<hero-detail [hero]="selectedHero"></hero-detail>
+
+
+// Putting square brackets around the hero property, to the left of the equal sign (=), makes it the target of a property binding expression. 
+// You must declare a target binding property to be an input property. Otherwise, Angular rejects the binding and throws an error.
+
+
+// First, amend the @angular/core import statement to include the Input symbol.
+
+	import { Component, Input } from '@angular/core';
+
+
+// Then declare that hero is an input property by preceding it with the @Input decorator that you imported earlier.
+
+	@Input() hero: Hero
+
+
+// Declare HeroDetailComponent in the AppModule
+
+	app.module.ts -> import { HeroDetailComponent } from './hero-detail.component';
+
+	declarations: [
+		AppComponent,
+		HeroDetailComponent
+	],
+
+
+// Add the HeroDetailComponent to the AppComponent
+
+	<hero-detail [hero]="selectedHero"></hero-detail>
+
+
+
+
+/***********************************************************
+ *
+ *          			Create Service
+ *
+ **********************************************************/
+
+
+// create hero service
+
+	ng generate service hero
+
+
+// Getting hero data
+
+	@Injectable()
+	export class HeroService {
+		constructor() { }
+		getHeroes(): void {} // stub
+	}
+
+
+// Move the mock hero data to new file src/app/mock-heroes.ts
+
+	import { Hero } from './hero';
 	
+	export const HEROES: Hero[] = [
+	{ id: 11, name: 'Mr. Nice' },
+	{ id: 12, name: 'Narco' },
+	{ id: 13, name: 'Bombasto' },
+	{ id: 14, name: 'Celeritas' },
+	{ id: 15, name: 'Magneta' },
+	{ id: 16, name: 'RubberMan' },
+	{ id: 17, name: 'Dynama' },
+	{ id: 18, name: 'Dr IQ' },
+	{ id: 19, name: 'Magma' },
+	{ id: 20, name: 'Tornado' }
+	];
+
+	( needs to be replaced with heroes: Hero[]; )
+
+
+// Return mocked hero data in hero.service.ts
+
+	import { Hero } from './hero';
+	import { HEROES } from './mock-heroes';
+
+	getHeroes(): Hero[] {
+		return HEROES;
+	}
+
+
+// Import the hero service into AppComponent
+
+	import { HeroService } from './hero.service';
+
+
+// Inject the HeroService into app.component.ts
+// Instead of using the new line, you'll add two lines.
+
+	// Add a constructor that also defines a private property.
+	// Now Angular knows to supply an instance of the HeroService when it creates an AppComponent.
+	
+	constructor(private heroService: HeroService) { }
+	
+	// Add to the component's providers metadata.
+
+
+// teach the injector how to make a HeroService, 
+// add the following providers array property to the 
+// bottom of the component metadata in the @Component call.
+
+	src/app/app.component.ts -> providers: [HeroService]
+
+
+// add getter in app.component.ts
+
+	getHeroes(): void {
+        this.heroes = this.heroService.getHeroes();
+    }
+
+
+
+
+/***********************************************************
+ *
+ *              The ngOnInit Lifecycle Hook
+ *
+ **********************************************************/
+
+
+// To have Angular call getHeroes(), you can implement the 
+// Angular ngOnInit lifecycle hook
+
+	src/app/app.component.ts
+
+	import { OnInit } from '@angular/core';
+
+	export class AppComponent implements OnInit {
+		ngOnInit(): void {
+		}
+	}
+
+
+
+
+/***********************************************************
+ *
+ *              Async services and Promises
+ *
+ **********************************************************/
+
+
+// The hero service makes a Promise
+
+// A Promise essentially promises to call back when the results 
+// are ready. You ask an asynchronous service to do some work 
+// and give it a callback function. The service does that work 
+// and eventually calls the function with the results or an error.
+
+	src/app/hero.service.ts
+	getHeroes(): Promise<Hero[]> {
+		return Promise.resolve(HEROES);
+	}
+
+
+// Act on the Promise
+
+// You have to change the implementation to act on the Promise 
+// when it resolves. When the Promise resolves successfully, 
+// you'll have heroes to display.
+
+	src/app/app.component.ts
+	getHeroes(): void {
+		// new arrow callback function
+		this.heroService.getHeroes().then(heroes => this.heroes = heroes);
+	}
+
+
+
+
+/***********************************************************
+ *
+ *              		  Routing
+ *
+ **********************************************************/
+
+
+- Add a Dashboard view.
+- Add the ability to navigate between the Heroes and Dashboard views.
+- When users click a hero name in either view, navigate to a detail view of the selected hero.
+- When users click a deep link in an email, open the detail view for a particular hero.
+
+
+// Open index.html and ensure there is a <base href="..."> in <head> section
+
+
+/***** Configure Routes *****/
+
+// Define the first route as a route to the heroes component
+
+	src/app/app.module.ts
+	import { RouterModule }   from '@angular/router';
+
+
+// and place inside @NgModule imports:
+
+	// Path: The router matches this route's path to the URL in the browser address bar (heroes).
+	// Component: The component that the router should create when navigating to this route (HeroesComponent).
+	RouterModule.forRoot([
+		{
+			path: 'heroes',
+			component: HeroesComponent
+		}
+	])
+
+
+// add the link to html
+
+	<h1>{{title}}</h1>
+	<a routerLink="/heroes">Heroes</a>
+	<router-outlet></router-outlet>
+
+
+/***** Add a dashboard component *****/
+
+	ng generate component dashboard
+
+// Configure the dashboard route
+// To teach app.module.ts to navigate to the dashboard, import the dashboard component and 
+// add the following route definition to the Routes array of definitions.
+
+	{
+		path: 'dashboard',
+		component: DashboardComponent
+	},
+
+// Add a redirect route, so that dashboard is the default that loads when we go to '/'
+
+	{
+		path: '',
+		redirectTo: '/dashboard',
+		pathMatch: 'full'
+	},
+
+
+// Add Navigation to the html Template
+
+<h1>{{title}}</h1>
+<nav>
+	<a routerLink="/dashboard">Dashboard</a>
+	<a routerLink="/heroes">Heroes</a>
+</nav>
+<router-outlet></router-outlet>
+
+
+/***** Add Heroes to the Dashboard *****/
+
+	dashboard.component.ts
+
+	@Component({
+		selector: 'my-dashboard',
+		templateUrl: './dashboard.component.html',
+	})
+
+
+	dashboard.component.html
+
+	<h3>Top Heroes</h3>
+	<div class="grid grid-pad">
+		<div *ngFor="let hero of heroes" class="col-1-4">
+			<div class="module hero">
+				<h4>{{hero.name}}</h4>
+			</div>
+		</div>
+	</div>
+
+
+/***** Get heroes *****/
+
+// In dashboard.component.ts, add the following import statements.
+
+dashboard.component.ts
+
+	import { Component, OnInit } from '@angular/core';
+
+	import { Hero } from './hero';
+	import { HeroService } from './hero.service';
+
+dashboard.component.ts
+
+	export class DashboardComponent implements OnInit {
+
+		heroes: Hero[] = [];
+
+		constructor(private heroService: HeroService) { }
+
+		ngOnInit(): void {
+			this.heroService.getHeroes()
+			.then(heroes => this.heroes = heroes.slice(1, 5));
+		}
+	}
+
+
+/***** Navigating to hero details *****/
+
+// Configure a route with a parameter
+
+	{
+		path: 'detail/:id',
+		component: HeroDetailComponent
+	},
+
+// revise the HeroDetailComponent
+
+	import { Component, Input } from '@angular/core';
+	import { Hero } from '../hero/hero';
+
+	@Component({
+		selector: 'hero-detail',
+		templateUrl: './hero-detail.component.html',
+		styleUrls: ['./hero-detail.component.css']
+	})
+
+	export class HeroDetailComponent {
+		constructor() { }
+		// variables for HeroDetailComponent class
+		@Input() hero: Hero
+		// function for HeroDetailComponent class
+		ngOnInit() {}
+	}
+
+Add the following imports to hero-detail.component.ts:
+
+	// Keep the Input import for now, you'll remove it later:
+	import { Component, Input, OnInit } from '@angular/core';
+	import { ActivatedRoute, ParamMap } from '@angular/router';
+	import { Location }                 from '@angular/common';
+	import { HeroService } 				from './hero.service';
+
+	// Inject the ActivatedRoute, HeroService, and Location services into the constructor, saving their values in private fields:
+	constructor(
+		private heroService: HeroService,
+		private route: ActivatedRoute,
+		private location: Location
+	) {}
+
+	// Import the switchMap operator to use later with the route parameters Observable.
+	import 'rxjs/add/operator/switchMap';
+
+	// Tell the class to implement the OnInit interface.
+	export class HeroDetailComponent implements OnInit {
+
+	// Inside the ngOnInit() lifecycle hook, use the paramMap Observable to extract the id parameter value 
+	// from the ActivatedRoute service and use the HeroService to fetch the hero with that id.
+	ngOnInit(): void {
+  		this.route.paramMap
+    		.switchMap((params: ParamMap) => this.heroService.getHero(+params.get('id')))
+    		.subscribe(hero => this.hero = hero);	
+	}
+
+
+// Add HeroService.getHero()
+
+	hero.service.ts
+	getHero(id: number): Promise<Hero> {
+		return this.getHeroes()
+				.then(heroes => heroes.find(hero => hero.id === id));
+	}
+
+
+// Find the way back
+
+hero-detail.component.ts
+
+	goBack(): void {
+		this.location.back();
+	}
+
+hero-detail.component.html
+
+	<button (click)="goBack()">Back</button>
+
+
+/***** Select a Dashboard Hero *****/
+
+// use [routerLink]
+
+	<a *ngFor="let hero of heroes"  [routerLink]="['/detail', hero.id]"  class="col-1-4">
+
+
+/***** Refactor Into Routing Module *****/
+
+// create app-routing.module.ts
+
+	import { NgModule }             from '@angular/core';
+	import { RouterModule, Routes } from '@angular/router';
+	
+	import { DashboardComponent }   from './dashboard.component';
+	import { HeroesComponent }      from './heroes.component';
+	import { HeroDetailComponent }  from './hero-detail.component';
+	
+
+	// The Routing Module pulls the routes into a variable. The variable clarifies the routing module pattern in case you export the module in the future.
+	const routes: Routes = [
+	{ path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+	{ path: 'dashboard',  component: DashboardComponent },
+	{ path: 'detail/:id', component: HeroDetailComponent },
+	{ path: 'heroes',     component: HeroesComponent }
+	];
+	
+	@NgModule({
+		// The Routing Module adds RouterModule.forRoot(routes) to imports
+		imports: [ RouterModule.forRoot(routes) ],
+		// The Routing Module adds RouterModule to exports so that the components in the companion module 
+		// have access to Router declarables, such as RouterLink and RouterOutlet
+		exports: [ RouterModule ]
+	})
+
+
+	export class AppRoutingModule {}
+
+// update app.module.ts
+
+	import { NgModule }       from '@angular/core';
+	import { BrowserModule }  from '@angular/platform-browser';
+	import { FormsModule }    from '@angular/forms';
+	
+	import { AppComponent }         from './app.component';
+	import { DashboardComponent }   from './dashboard.component';
+	import { HeroDetailComponent }  from './hero-detail.component';
+	import { HeroesComponent }      from './heroes.component';
+	import { HeroService }          from './hero.service';
+	
+	import { AppRoutingModule }     from './app-routing.module';
+	
+	@NgModule({
+	imports: [
+		BrowserModule,
+		FormsModule,
+		AppRoutingModule
+	],
+	declarations: [
+		AppComponent,
+		DashboardComponent,
+		HeroDetailComponent,
+		HeroesComponent
+	],
+	providers: [ HeroService ],
+	bootstrap: [ AppComponent ]
+	})
+	export class AppModule { }
+
+
+// update the heroes.component.ts
+
+	gotoDetail(): void {
+		this.router.navigate(['/detail', this.selectedHero.id]);
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
