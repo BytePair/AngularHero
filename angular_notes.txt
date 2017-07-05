@@ -713,6 +713,402 @@ hero-detail.component.html
 
 
 
+/***********************************************************
+ *
+ *              		   HTTP
+ *
+ **********************************************************/
+
+
+/***** Register for HTTP services *****/
+
+// To allow access to these services from anywhere in the app, add HttpModule to the imports list of the AppModule.
+
+	app.module.ts
+
+
+/***** Simpulate the web API *****/
+
+// Until you have a web server that can handle requests for hero data, the HTTP client will fetch and save data from a mock service, the in-memory web API.
+
+	// Imports for loading & configuring the in-memory web api
+	import { InMemoryWebApiModule } from 'angular-in-memory-web-api';
+	import { InMemoryDataService }  from './in-memory-data.service';
+
+	@NgModule([
+		InMemoryWebApiModule.forRoot(InMemoryDataService),
+	])
+
+// Delete mock-heroes.ts with in-memomry-data.service.ts
+
+	import { InMemoryDbService } from 'angular-in-memory-web-api';
+	export class InMemoryDataService implements InMemoryDbService {
+	createDb() {
+		const heroes = [
+		{ id: 0,  name: 'Zero' },
+		{ id: 11, name: 'Mr. Nice' },
+		{ id: 12, name: 'Narco' },
+		{ id: 13, name: 'Bombasto' },
+		{ id: 14, name: 'Celeritas' },
+		{ id: 15, name: 'Magneta' },
+		{ id: 16, name: 'RubberMan' },
+		{ id: 17, name: 'Dynama' },
+		{ id: 18, name: 'Dr IQ' },
+		{ id: 19, name: 'Magma' },
+		{ id: 20, name: 'Tornado' }
+		];
+		return {heroes};
+	}
+	}
+
+
+/***** Heroes and HTTP *****/
+
+// replace hero.seervice.ts
+
+import { Injectable }    from '@angular/core';
+import { Headers, Http } from '@angular/http';
+
+import 'rxjs/add/operator/toPromise';
+
+import { Hero } from './hero';
+
+
+@Injectable()
+export class HeroService {
+
+    private heroesUrl = 'api/heroes';  // URL to web api
+ 
+    constructor(private http: Http) { }
+ 
+    getHeroes(): Promise<Hero[]> {
+        // .get() returns an RxJS observable
+        return this.http.get(this.heroesUrl)
+            // toPromise() converts the Observable to a Promise
+            .toPromise()
+            // In the Promise's then() callback, you call the json method of the HTTP Response
+            // to extract the data within the response.
+            // The response JSON has a single data property, which holds the array of heroes that the caller wants
+            .then(response => response.json().data as Hero[])
+            // At the end of getHeroes(), you catch server failures and pass them to an error handler.
+            .catch(this.handleError);
+    }
+ 
+    private handleError(error: any): Promise<any> {
+        // for demo purposes only
+        console.error('An error occurred', error); 
+        return Promise.reject(error.message || error);
+    }
+
+    // search for api/hero/:id
+    getHero(id: number): Promise<Hero> {
+        const url = `${this.heroesUrl}/${id}`;
+        return this.http.get(url)
+            .toPromise()
+            .then(response => response.json().data as Hero)
+            .catch(this.handleError);
+    }
+}
+
+
+
+
+/***********************************************************
+ *
+ *              Updating Hero Details
+ *
+ **********************************************************/
+
+
+/***** Save Heroes *****/
+
+// add button
+
+	hero-detail.component.html
+
+	<button (click)="save()">Save</button>
+
+// add save() function
+
+	hero-detail.component.ts
+
+	save(): void {
+		this.heroService.update(this.hero)
+			.then(() => this.goBack());
+	}
+
+// add hero service update() method
+
+	hero.service.ts
+
+	private headers = new Headers({'Content-Type': 'application/json'});
+
+	update(hero: Hero): Promise<Hero> {
+		const url = `${this.heroesUrl}/${hero.id}`;
+		return this.http
+			.put(url, JSON.stringify(hero), {headers: this.headers})
+			.toPromise()
+			.then(() => hero)
+			.catch(this.handleError);
+	}
+
+
+
+
+/***********************************************************
+ *
+ *             Add the Ability to Add Heroes
+ *
+ **********************************************************/
+
+
+// Insert the following into the heroes component HTML, just after the heading:
+
+	<div>
+		<label>Hero name:</label> <input #heroName />
+		<button (click)="add(heroName.value); heroName.value=''">
+			Add
+		</button>
+	</div>
+
+
+// call the component's click handler and then clear the input field so that it's ready for another name
+
+	// heroes.component.ts
+
+	add(name: string): void {
+        name = name.trim();
+        if (!name) { return; }
+        this.heroService.create(name)
+            .then(hero => {
+                this.heroes.push(hero);
+                this.selectedHero = null;
+            });
+    }
+
+
+// Implement the create() method in the HeroService class
+
+	// hero.service.ts
+
+	create(name: string): Promise<Hero> {
+		return this.http
+		.post(this.heroesUrl, JSON.stringify({name: name}), {headers: this.headers})
+		.toPromise()
+		.then(res => res.json().data as Hero)
+		.catch(this.handleError);
+	}
+
+
+
+
+/***********************************************************
+ *
+ *            Add the ability to delete a hero
+ *
+ **********************************************************/
+
+
+// Add the following button element to the heroes component HTML, after the hero name in the repeated <li> element.
+
+	<li *ngFor="let hero of heroes" (click)="onSelect(hero)"
+		[class.selected]="hero === selectedHero">
+			<span class="badge">{{hero.id}}</span>
+			<span>{{hero.name}}</span>
+			<button class="delete" (click)="delete(hero); $event.stopPropagation()">x</button>
+	</li>
+
+
+// add delete handler to heroes.component.ts 
+
+	delete(hero: Hero): void {
+	this.heroService
+		.delete(hero.id)
+		.then(() => {
+			this.heroes = this.heroes.filter(h => h !== hero);
+			if (this.selectedHero === hero) { this.selectedHero = null; }
+		});
+	}
+
+
+// add css to move the button right
+
+	button.delete {
+		float:right;
+		margin-top: 2px;
+		margin-right: .8em;
+		background-color: gray !important;
+		color:white;
+	}
+
+
+// add delete to hero.service.ts
+
+	delete(id: number): Promise<void> {
+		const url = `${this.heroesUrl}/${id}`;
+		return this.http.delete(url, {headers: this.headers})
+			.toPromise()
+			.then(() => null)
+			.catch(this.handleError);
+	}
+
+
+
+
+/***********************************************************
+ *
+ *            Add the Ability to Search By Name
+ *
+ **********************************************************/
+
+
+// Add hero search service
+
+	import { Injectable }     from '@angular/core';
+	import { Http }           from '@angular/http';
+	
+	import { Observable }     from 'rxjs/Observable';
+	import 'rxjs/add/operator/map';
+	
+	import { Hero }           from './hero';
+	
+	@Injectable()
+	export class HeroSearchService {
+	
+		constructor(private http: Http) {}
+	
+		search(term: string): Observable<Hero[]> {
+			return this.http
+				.get(`api/heroes/?name=${term}`)
+				.map(response => response.json().data as Hero[]);
+		}
+	}
+
+
+// Add search component
+
+	hero-search.component.html
+
+	<div id="search-component">
+		<h4>Hero Search</h4>
+		<input #searchBox id="search-box" (keyup)="search(searchBox.value)" />
+		<div>
+			<div *ngFor="let hero of heroes | async"
+				(click)="gotoDetail(hero)" class="search-result" >
+				{{hero.name}}
+			</div>
+		</div>
+	</div>
+
+
+// Format search component
+
+	hero-search.component.css
+
+	.search-result{
+		border-bottom: 1px solid gray;
+		border-left: 1px solid gray;
+		border-right: 1px solid gray;
+		width:195px;
+		height: 16px;
+		padding: 5px;
+		background-color: white;
+		cursor: pointer;
+	}
+	.search-result:hover {
+		color: #eee;
+		background-color: #607D8B;
+	}
+	#search-box{
+		width: 200px;
+		height: 20px;
+	}
+
+
+// Create the HeroSearchComponent class and metadata.
+
+	import { Component, OnInit } from '@angular/core';
+	import { Router }            from '@angular/router';
+	
+	import { Observable }        from 'rxjs/Observable';
+	import { Subject }           from 'rxjs/Subject';
+	
+	// Observable class extensions
+	import 'rxjs/add/observable/of';
+	
+	// Observable operators
+	import 'rxjs/add/operator/catch';
+	import 'rxjs/add/operator/debounceTime';
+	import 'rxjs/add/operator/distinctUntilChanged';
+	
+	import { HeroSearchService } from './hero-search.service';
+	import { Hero } from './hero';
+	
+	@Component({
+	selector: 'hero-search',
+	templateUrl: './hero-search.component.html',
+	styleUrls: [ './hero-search.component.css' ],
+	providers: [HeroSearchService]
+	})
+	export class HeroSearchComponent implements OnInit {
+	heroes: Observable<Hero[]>;
+	private searchTerms = new Subject<string>();
+	
+	constructor(
+		private heroSearchService: HeroSearchService,
+		private router: Router) {}
+	
+	// Push a search term into the observable stream.
+	search(term: string): void {
+		this.searchTerms.next(term);
+	}
+	
+	ngOnInit(): void {
+		this.heroes = this.searchTerms
+		.debounceTime(300)        // wait 300ms after each keystroke before considering the term
+		.distinctUntilChanged()   // ignore if next search term is same as previous
+		.switchMap(term => term   // switch to new observable each time the term changes
+			// return the http search observable
+			? this.heroSearchService.search(term)
+			// or the observable of empty heroes if there was no search term
+			: Observable.of<Hero[]>([]))
+		.catch(error => {
+			// TODO: add real error handling
+			console.log(error);
+			return Observable.of<Hero[]>([]);
+		});
+	}
+	
+	gotoDetail(hero: Hero): void {
+		let link = ['/detail', hero.id];
+		this.router.navigate(link);
+	}
+	}
+
+
+// add search component to dashboard.component.html
+
+	<h3>Top Heroes</h3>
+	<div class="grid grid-pad">
+		<a *ngFor="let hero of heroes"  [routerLink]="['/detail', hero.id]"  class="col-1-4">
+			<div class="module hero">
+				<h4>{{hero.name}}</h4>
+			</div>
+		</a>
+	</div>
+	<hero-search></hero-search>
+
+
+// import HeroSearchComponent from hero-search.component.ts and add it to the declarations array.
+
+
+
+
+
+
+
+
+
 
 
 
